@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Welcome to 1otto!!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body {
+        background-color: #f2f2f2;
+        font-family: Arial, sans-serif;
+      }
+
+      h1 {
+        color: #ffcc00;
+      }
+
+      form {
+        margin-bottom: 20px;
+      }
+
+      label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      select {
+        padding: 5px;
+        font-size: 16px;
+        width: 300px;
+        margin-bottom: 10px;
+      }
+
+      button {
+        padding: 8px 15px;
+        background-color: #333;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #555;
+      }
+
+      #inputField {
+        margin-bottom: 20px;
+      }
+
+      #output {
+        background-color: #fff;
+        padding: 20px;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        margin-bottom: 10px;
+      }
+      img {
+        max-width: 9mm;
+        max-height: 9mm;
+      }      
+
+      /* 모바일 화면 크기에 대한 스타일 */
+      @media screen and (max-width: 480px) {
+        h1 {
+          font-size: 24px;
+        }
+
+        select {
+          width: 100%;
+        }
+
+        button {
+          display: block;
+          width: 100%;
+        }
+        img {
+          max-width: 8mm;
+          max-height: 8mm;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+  </head>
+  <body>
+    <h1>1otto</h1>
+    <form onsubmit="return false">
+      <label for="code">메뉴를 선택하세요:</label>
+      <select id="code" name="code" onchange="showInput()">
+        <option value="1">1. 자동 번호 생성</option>
+        <option value="2">2. 홀수 짝수 개수 입력 후 반자동 번호 생성</option>
+        <option value="3">3. 입력한 숫자를 제외 & 포함한 반자동 번호 생성</option>
+        <option value="4">4. 평균 입력 후 반자동 번호 생성</option>
+        <option value="5">5. 특정 숫자 포함 회차 조회</option>
+      </select>
+      <button py-click="getOutput()" type="submit" value="submit">클릭</button>
+      <div id="inputField"></div>
+    </form>
+    <div id="output"></div>
+
+    <py-script>
+      import random
+      import js
+
+      def query(message):
+        return js.prompt(message)
+
+      def getMenu():
+        code_str = js.document.getElementById("code").value
+        code_str = code_str.replace(",", "")
+        try:
+          code = int(code_str)
+        except ValueError:
+          output = "Please select a valid code"
+          js.document.getElementById("output").innerHTML = output
+          return
+
+        num_str = query("로또 번호를 몇 개 생성하시겠습니까?")
+        try:
+          num = int(num_str)
+        except ValueError:
+          output = "Please enter a valid number of lotto numbers"
+          js.document.getElementById("output").innerHTML = output
+          return
+
+        if code == 1:
+          generateRandomNumbers(num)
+        elif code == 2:
+          generateSemiRandomNumbers(num)
+        elif code == 3:
+          generateExcludedNumbers(num)
+        elif code == 4:
+          generateAverageNumbers(num)
+        elif code == 5:
+          generateNumberByDraw()
+
+      def generateRandomNumbers(num):
+        output = "<h2>자동 번호 생성</h2><ul>"
+        for _ in range(num):
+          lotto_numbers = random.sample(range(1, 46), 6)
+          lotto_numbers.sort()
+          output += "<li>"
+          for number in lotto_numbers:
+            output += '<img src="' + str(number) + '.png">'
+          output += "</li>"
+        output += "</ul>"
+        js.document.getElementById("output").innerHTML = output
+
+      def generateSemiRandomNumbers(num):
+        output = "<h2>홀수 짝수 개수 입력 후 반자동 번호 생성</h2>"
+        odd_str = query("몇 개의 홀수를 포함시킬까요?")
+        even_str = query("몇 개의 짝수를 포함시킬까요?")
+        try:
+          odd_count = int(odd_str)
+          even_count = int(even_str)
+        except ValueError:
+          output = "Please enter valid numbers for odd and even counts"
+          js.document.getElementById("output").innerHTML = output
+          return
+
+        if odd_count + even_count > 6:
+          output = "The total count of odd and even numbers cannot exceed 6"
+          js.document.getElementById("output").innerHTML = output
+          return
+
+        output += "<ul>"
+        for _ in range(num):
+          numbers = []
+          for _ in range(odd_count):
+            numbers.append(random.choice(range(1, 46, 2)))
+          for _ in range(even_count):
+            numbers.append(random.choice(range(2, 46, 2)))
+          random.shuffle(numbers)
+          output += "<li>"
+          for number in numbers:
+            output += '<img src="' + str(number) + '.png">'
+          output += "</li>"
+        output += "</ul>"
+        js.document.getElementById("output").innerHTML = output
+
+      def generateExcludedNumbers(num):
+        output = "<h2>입력한 숫자를 제외 & 포함한 반자동 번호 생성</h2>"
+        exclude_str = query("제외할 숫자를 입력하세요.")
+        include_str = query("포함할 숫자를 입력하세요.")
+        exclude_numbers = []
+        include_numbers = []
+
+        if exclude_str:
+          exclude_numbers = exclude_str.split(",")
+          exclude_numbers = [int(number.strip()) for number in exclude_numbers if number.strip()]
+
+        if include_str:
+          include_numbers = include_str.split(",")
+          include_numbers = [int(number.strip()) for number in include_numbers if number.strip()]
+
+        output += "<ul>"
+        for _ in range(num):
+          numbers = []
+          while len(numbers) < 6:
+            number = random.randint(1, 45)
+            if number not in exclude_numbers and (not include_numbers or number in include_numbers):
+              numbers.append(number)
+          numbers.sort()
+          output += "<li>"
+          for number in numbers:
+            output += '<img src="' + str(number) + '.png">'
+          output += "</li>"
+        output += "</ul>"
+        js.document.getElementById("output").innerHTML = output
+
+      def generateAverageNumbers(num):
+          output = "<h2>평균 입력 후 반자동 번호 생성</h2>"
+          avg_str = query("평균을 입력하세요")
+          try:
+              avg = int(avg_str)
+          except ValueError:
+              output = "Please enter a valid number"
+              js.document.getElementById("output").innerHTML = output
+              return
+
+          output += "<ul>"
+
+          for _ in range(num):
+              start_num = max(1, avg - 10)
+              end_num = min(45, avg + 10)
+              lotto_numbers = random.sample(range(start_num, end_num + 1), 6)
+              output += "<li>"
+              for number in lotto_numbers:
+                  output += '<img src="' + str(number) + '.png">'
+              output += "</li>"
+
+          output += "</ul>"
+          js.document.getElementById("output").innerHTML = output
+
+
+      def generateNumberByDraw():
+        output = "<h2>특정 숫자 포함 회차 조회</h2>"
+        number_str = query("특정 숫자를 입력하세요.")
+        try:
+          number = int(number_str)
+        except ValueError:
+          output = "Please enter a valid number"
+          js.document.getElementById("output").innerHTML = output
+          return
+
+        output += "<ul>"
+        output += "<li>Number: " + str(number) + "</li>"
+        output += "<li>Draws: ...</li>"
+        output += "</ul>"
+        js.document.getElementById("output").innerHTML = output
+
+      def showInput():
+        code_str = js.document.getElementById("code").value
+        code_str = code_str.replace(",", "")
+        try:
+          code = int(code_str)
+        except ValueError:
+          return
+
+        inputField = js.document.getElementById("inputField")
+        inputField.innerHTML = ""
+
+        if code == 1:
+          return
+        elif code == 2:
+          odd_input = js.document.createElement("input")
+          odd_input.type = "number"
+          odd_input.placeholder = "홀수 개수"
+          odd_input.id = "oddInput"
+
+          even_input = js.document.createElement("input")
+          even_input.type = "number"
+          even_input.placeholder = "짝수 개수"
+          even_input.id = "evenInput"
+
+          inputField.appendChild(odd_input)
+          inputField.appendChild(even_input)
+        elif code == 3:
+          exclude_input = js.document.createElement("input")
+          exclude_input.type = "text"
+          exclude_input.placeholder = "제외할 숫자 (쉼표로 구분)"
+          exclude_input.id = "excludeInput"
+
+          include_input = js.document.createElement("input")
+          include_input.type = "text"
+          include_input.placeholder = "포함할 숫자 (쉼표로 구분)"
+          include_input.id = "includeInput"
+
+          inputField.appendChild(exclude_input)
+          inputField.appendChild(include_input)
+        elif code == 4:
+          average_input = js.document.createElement("input")
+          average_input.type = "number"
+          average_input.placeholder = "평균값"
+          average_input.step = "0.01"
+          average_input.id = "averageInput"
+
+          inputField.appendChild(average_input)
+        elif code == 5:
+          number_input = js.document.createElement("input")
+          number_input.type = "number"
+          number_input.placeholder = "특정 숫자"
+          number_input.id = "numberInput"
+
+          inputField.appendChild(number_input)
+
+      def getOutput():
+        getMenu()
+
+    </py-script>
+  </body>
+</html>
